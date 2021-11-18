@@ -58,7 +58,7 @@ pub enum NmeaLine {
     GPFPD(gpfpd::Body),
     GTIMU(gtimu::Body),
     GPHPD(gphpd::Body),
-    GPGGA(gpgga::Body),
+    GPGGA(gpgga::Body, String),
     GPRMC(String),
     GPCHC(String),
     CMD(cmd::Body),
@@ -74,13 +74,18 @@ impl FromStr for NmeaLine {
             "GPFPD" => NmeaLine::GPFPD(tail.parse()?),
             "GTIMU" => NmeaLine::GTIMU(tail.parse()?),
             "GPHPD" => NmeaLine::GPHPD(tail.parse()?),
-            "GPGGA" => NmeaLine::GPGGA(tail.parse()?),
+            "GPGGA" => NmeaLine::GPGGA(tail.parse()?, tail.into()),
             "GPRMC" => NmeaLine::GPRMC(tail.into()),
             "GPCHC" => NmeaLine::GPCHC(tail.into()),
             "cmd" => NmeaLine::CMD(tail.parse()?),
             unknown => NmeaLine::Unknown(unknown.into(), tail.into()),
         })
     }
+}
+
+#[inline]
+pub fn rebuild_nema(head: &str, tail: &str, cs: u8) -> String {
+    format!("${},{}*{:2X}", head, tail, cs)
 }
 
 #[test]
@@ -103,7 +108,22 @@ fn test_parse() {
             .parse()
             .unwrap();
         println!("i = {}, {:?}", i, result);
-        assert_eq!(parser.next(), Some(result));
+        assert_eq!(parser.next().unwrap().0, result);
     }
     assert_eq!(parser.next(), None);
+}
+
+#[test]
+fn test_rebuild_gpgga() {
+    const LINE: &str =
+        "$GPGGA,235948.00,0000.0000,S,00000.0000,W,0,0,0.00,0.000,M,0.000,M,00,0000*53";
+
+    let mut parser = NmeaParser::<256>::default();
+    parser.as_buf()[..LINE.len()].copy_from_slice(LINE.as_bytes());
+    parser.notify_received(LINE.len());
+    if let Some((NmeaLine::GPGGA(_, tail), cs)) = parser.next() {
+        assert_eq!(rebuild_nema("GPGGA", tail.as_str(), cs), LINE);
+    } else {
+        panic!("Parse failed.");
+    }
 }

@@ -33,17 +33,19 @@ macro_rules! move_cursor {
 }
 
 impl<const LEN: usize> NmeaParser<LEN> {
+    #[inline]
     pub fn as_buf<'a>(&'a mut self) -> &'a mut [u8] {
         &mut self.buf[self.cursor_w..]
     }
 
+    #[inline]
     pub fn notify_received<'a>(&'a mut self, n: usize) {
         self.cursor_w += n;
     }
 }
 
 impl<const LEN: usize> Iterator for NmeaParser<LEN> {
-    type Item = NmeaLine;
+    type Item = (NmeaLine, u8);
 
     /// 从缓冲区解析一个 NEMA 消息，当且仅当缓冲区中没有完整的消息时返回 [`None`]，此时需要读取新的数据填充到缓冲区
     fn next(&mut self) -> Option<Self::Item> {
@@ -100,20 +102,23 @@ impl Cursors {
     }
 
     /// 从 buf 切出字符串
-    fn complete(&mut self, buf: &[u8]) -> NmeaLine {
+    fn complete(&mut self, buf: &[u8]) -> (NmeaLine, u8) {
+        let cs = parse_cs(&buf[self.c..]);
         let result = unsafe { std::str::from_utf8_unchecked(&buf[self.r + 1..self.c]) };
         self.move_next();
         self.move_on(buf);
-        NmeaLine::from_str(result).unwrap()
+        (NmeaLine::from_str(result).unwrap(), cs)
     }
 
     /// 一次解析完成
+    #[inline]
     fn move_next(&mut self) {
         self.r = self.c + 3;
         self.c += 4;
     }
 
     /// 回车
+    #[inline]
     fn reset(&mut self) {
         if self.c > self.r {
             self.c -= self.r;
@@ -124,13 +129,29 @@ impl Cursors {
     }
 
     /// 异或校验
+    #[inline]
     fn xor_check<'a>(&self, buf: &'a [u8]) -> bool {
-        let sum = buf[self.r + 1..self.c].iter().fold(0, |sum, it| sum ^ *it);
-        &buf[self.c..][1..3] == format!("{:2X}", sum).as_bytes()
+        buf[self.r + 1..self.c].iter().fold(0, |sum, it| sum ^ *it) == parse_cs(&buf[self.c..])
     }
 
     /// 已检查的区段长度
+    #[inline]
     fn len(&self) -> usize {
         self.c - self.r - 1
     }
+}
+
+#[inline]
+fn parse_u8(byte: u8) -> Option<u8> {
+    match byte {
+        b'0'..=b'9' => Some(byte - b'0'),
+        b'a'..=b'f' => Some(byte - b'a' + 10),
+        b'A'..=b'F' => Some(byte - b'A' + 10),
+        _ => None,
+    }
+}
+
+#[inline]
+fn parse_cs(cs: &[u8]) -> u8 {
+    parse_u8(cs[1]).unwrap() << 4 | parse_u8(cs[2]).unwrap()
 }
