@@ -4,34 +4,41 @@ macro_rules! parse_field {
     // 解析一般数据
     ($s:ident => $info:expr) => {
         match $s.next() {
-            Some(s) => match s.parse() {
-                Ok(it) => it,
-                Err(_) => return Err(BodyParseError::ParseFailed($info, s.into())),
+            Some(s) => match crate::parse_any(s) {
+                Some(it) => it,
+                None => return Err(BodyParseError::ParseFailed($info, s.to_string())),
+            },
+            None => return Err(BodyParseError::MissingField($info)),
+        }
+    };
+    // 解析一般数据
+    ($s:ident =>? $info:expr) => {
+        match $s.next() {
+            Some(s) => match crate::parse_option(s) {
+                Some(it) => it,
+                None => return Err(BodyParseError::ParseFailed($info, s.to_string())),
+            },
+            None => return Err(BodyParseError::MissingField($info)),
+        }
+    };
+    // 定点小数解析为整数
+    ($s:ident => $info:expr; ?) => {
+        match $s.next() {
+            Some(s) => match crate::parse_fixed_unknown(s) {
+                Some(it) => it,
+                None => return Err(BodyParseError::ParseFailed($info, s.to_string())),
             },
             None => return Err(BodyParseError::MissingField($info)),
         }
     };
     // 定点小数解析为整数
     // `n` 为小数位数
-    ($s:ident => $info:expr; $n:expr, $max:expr) => {
+    ($s:ident => $info:expr; $n:expr) => {
         match $s.next() {
-            Some(s) => {
-                let b = s.as_bytes();
-                if b.len() < $n + 2 {
-                    return Err(BodyParseError::ParseFailed($info, s.into()));
-                }
-                let i = b.len() - $n - 1;
-                if b[i] != b'.' {
-                    return Err(BodyParseError::ParseFailed($info, s.into()));
-                }
-                let mut buf = [0u8; $max];
-                buf[..i].copy_from_slice(&b[..i]);
-                buf[i..][..$n].copy_from_slice(&b[i + 1..]);
-                match unsafe { std::str::from_utf8_unchecked(&buf[..b.len() - 1]) }.parse() {
-                    Ok(n) => n,
-                    Err(_) => return Err(BodyParseError::ParseFailed($info, s.into())),
-                }
-            }
+            Some(s) => match crate::parse_fixed(s, $n) {
+                Some(it) => it,
+                None => return Err(BodyParseError::ParseFailed($info, s.to_string())),
+            },
             None => return Err(BodyParseError::MissingField($info)),
         }
     };
@@ -88,15 +95,69 @@ pub fn rebuild_nema(head: &str, tail: &str, cs: u8) -> String {
     format!("${},{}*{:2X}", head, tail, cs)
 }
 
+#[inline]
+fn parse_any<T: FromStr>(s: &str) -> Option<T> {
+    match s.parse::<T>() {
+        Ok(it) => Some(it),
+        Err(_) => None,
+    }
+}
+
+#[inline]
+fn parse_option<T: FromStr>(s: &str) -> Option<Option<T>> {
+    if s.is_empty() {
+        Some(None)
+    } else {
+        match s.parse::<T>() {
+            Ok(it) => Some(Some(it)),
+            Err(_) => None,
+        }
+    }
+}
+
+fn parse_fixed_unknown<T: FromStr>(s: &str) -> Option<(T, u8)> {
+    let b = s.as_bytes();
+    let n = match b.iter().rev().enumerate().find(|(_, b)| **b == b'.') {
+        Some((n, _)) => n,
+        None => return None,
+    };
+    let i = b.len() - n - 1;
+    let mut buf = [0u8; 16];
+    buf[..i].copy_from_slice(&b[..i]);
+    buf[i..][..n].copy_from_slice(&b[i + 1..]);
+    match unsafe { std::str::from_utf8_unchecked(&buf[..b.len() - 1]) }.parse() {
+        Ok(x) => Some((x, n as u8)),
+        Err(_) => None,
+    }
+}
+
+fn parse_fixed<T: FromStr>(s: &str, n: usize) -> Option<T> {
+    let b = s.as_bytes();
+    if b.len() < n + 2 {
+        return None;
+    }
+    let i = b.len() - n - 1;
+    if b[i] != b'.' {
+        return None;
+    }
+    let mut buf = [0u8; 16];
+    buf[..i].copy_from_slice(&b[..i]);
+    buf[i..][..n].copy_from_slice(&b[i + 1..]);
+    match unsafe { std::str::from_utf8_unchecked(&buf[..b.len() - 1]) }.parse() {
+        Ok(x) => Some(x),
+        Err(_) => None,
+    }
+}
+
 #[test]
 fn test_parse() {
     let mut parser = NmeaParser::<256>::default();
 
     const LINES: [&[u8]; 5] = [
-        b"$GPFPD,0,6.000,0.000,37.623,11.899,0.0000000,0.0000000,0.00,0.000,0.000,0.000,0.000,0,0,00*4A",
+        b"$GPFPD,2185,108150.400,272.628,2.722,0.188,39.9926157,116.3269623,-308580.94,0.003,-0.033,-3243.491,10.191,15,18,04*63",
         b"$GTIMU,0,6.000,3.3755,-0.0768,-3.0907,-0.1633,0.6105,0.7855,27.5*4C",
         b"$GPHPD,0,0.000,0.000,0.000,0.000,0.0000000,0.0000000,0.00,0.000,0.000,0.000,0.000,0,0,00*49",
-        b"$GPGGA,235948.00,0000.0000,S,00000.0000,W,0,0,0.00,0.000,M,0.000,M,00,0000*53",
+        b"$GPGGA,060220.00,3959.55874779,N,11619.61828897,E,1,17,1.6,60.1397,M,-9.2862,M,,*42",
         b"$cmd,get,product,newton-m3*ff",
     ];
 
@@ -116,7 +177,7 @@ fn test_parse() {
 #[test]
 fn test_rebuild_gpgga() {
     const LINE: &str =
-        "$GPGGA,235948.00,0000.0000,S,00000.0000,W,0,0,0.00,0.000,M,0.000,M,00,0000*53";
+        "$GPGGA,060220.00,3959.55874779,N,11619.61828897,E,1,17,1.6,60.1397,M,-9.2862,M,,*42";
 
     let mut parser = NmeaParser::<256>::default();
     parser.as_buf()[..LINE.len()].copy_from_slice(LINE.as_bytes());

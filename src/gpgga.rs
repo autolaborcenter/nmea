@@ -4,19 +4,19 @@ use std::str::FromStr;
 #[derive(Debug, PartialEq)]
 pub struct Body {
     utc_time: u32,
-    latitude: u32,
+    latitude: (u64, u8),
     ns: NS,
-    longitude: u32,
+    longitude: (u64, u8),
     ew: EW,
     status: Status,
     nosv: u8,
-    hdop: u16,
-    altitude: u32,
+    hdop: (u16, u8),
+    altitude: (u32, u8),
     alt_unit: LenUnit,
-    alt_ref: u32,
+    alt_ref: (i32, u8),
     alt_ref_unit: LenUnit,
-    diff_age: u8,
-    diff_station: u16,
+    diff_age: Option<u8>,
+    diff_station: Option<u16>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -55,20 +55,20 @@ impl FromStr for Body {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let mut s = s.split(',');
         Ok(Self {
-            utc_time: parse_field!(s => "GPGGA:UTCTime"; 2, 8),
-            latitude: parse_field!(s => "GPGGA:Latitude"; 4, 8),
+            utc_time: parse_field!(s => "GPGGA:UTCTime"; 2),
+            latitude: parse_field!(s => "GPGGA:Latitude"; ?),
             ns: parse_field!(s => "GPGGA:N"),
-            longitude: parse_field!(s => "GPGGA:Longitude"; 4, 9),
+            longitude: parse_field!(s => "GPGGA:Longitude"; ?),
             ew: parse_field!(s => "GPGGA:E"),
             status: parse_field!(s => "GPGGA:FS"),
             nosv: parse_field!(s => "GPGGA:NoSV"),
-            hdop: parse_field!(s => "GPGGA:HDOP"; 2, 4),
-            altitude: parse_field!(s => "GPGGA:Altitude"; 3, 8),
+            hdop: parse_field!(s => "GPGGA:HDOP"; ?),
+            altitude: parse_field!(s => "GPGGA:Altitude"; ?),
             alt_unit: parse_field!(s => "GPGGA:AltUnit"),
-            alt_ref: parse_field!(s => "GPGGA:Altref"; 3, 7),
+            alt_ref: parse_field!(s => "GPGGA:Altref"; ?),
             alt_ref_unit: parse_field!(s => "GPGGA:AltrefUnit"),
-            diff_age: parse_field!(s => "GPGGA:DiffAge"),
-            diff_station: parse_field!(s => "GPGGA:DiffStation"),
+            diff_age: parse_field!(s =>? "GPGGA:DiffAge"),
+            diff_station: parse_field!(s =>? "GPGGA:DiffStation"),
         })
     }
 }
