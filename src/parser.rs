@@ -67,10 +67,10 @@ impl<const LEN: usize> Iterator for NmeaParser<LEN> {
             if self.cursor_r.len() >= 3 && self.buf[self.cursor_r.r + 1..].starts_with(b"cmd") {
                 // $cmd...*ff
                 if self.buf[self.cursor_r.c + 1..].starts_with(b"ff") {
-                    break Some(self.cursor_r.complete(&self.buf[..self.cursor_w]));
+                    break self.cursor_r.complete(&self.buf[..self.cursor_w]);
                 }
             } else if self.cursor_r.xor_check(&self.buf[..self.cursor_w]) {
-                break Some(self.cursor_r.complete(&self.buf[..self.cursor_w]));
+                break self.cursor_r.complete(&self.buf[..self.cursor_w]);
             }
             self.cursor_r.move_next();
         };
@@ -102,12 +102,12 @@ impl Cursors {
     }
 
     /// 从 buf 切出字符串
-    fn complete(&mut self, buf: &[u8]) -> (NmeaLine, u8) {
-        let cs = parse_cs(&buf[self.c..]);
+    fn complete(&mut self, buf: &[u8]) -> Option<(NmeaLine, u8)> {
+        let cs = parse_cs(&buf[self.c..])?;
         let result = unsafe { std::str::from_utf8_unchecked(&buf[self.r + 1..self.c]) };
         self.move_next();
         self.move_on(buf);
-        (NmeaLine::from_str(result).unwrap(), cs)
+        Some((NmeaLine::from_str(result).ok()?, cs))
     }
 
     /// 一次解析完成
@@ -131,7 +131,8 @@ impl Cursors {
     /// 异或校验
     #[inline]
     fn xor_check<'a>(&self, buf: &'a [u8]) -> bool {
-        buf[self.r + 1..self.c].iter().fold(0, |sum, it| sum ^ *it) == parse_cs(&buf[self.c..])
+        Some(buf[self.r + 1..self.c].iter().fold(0, |sum, it| sum ^ *it))
+            == parse_cs(&buf[self.c..])
     }
 
     /// 已检查的区段长度
@@ -152,6 +153,6 @@ fn parse_u8(byte: u8) -> Option<u8> {
 }
 
 #[inline]
-fn parse_cs(cs: &[u8]) -> u8 {
-    parse_u8(cs[1]).unwrap() << 4 | parse_u8(cs[2]).unwrap()
+fn parse_cs(cs: &[u8]) -> Option<u8> {
+    Some(parse_u8(cs[1])? << 4 | parse_u8(cs[2])?)
 }

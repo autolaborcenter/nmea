@@ -1,6 +1,6 @@
 [package]
 name = "nmea"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 authors = ["YdrMaster <ydrml@hotmail.com>"]
 readme = "README.md"
