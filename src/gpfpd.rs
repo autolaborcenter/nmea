@@ -3,21 +3,21 @@ use std::str::FromStr;
 
 #[derive(Debug, PartialEq)]
 pub struct Body {
-    gps_week: u16,
-    gps_time: u32,
-    heading: u32,
-    pitch: i32,
-    roll: i32,
-    latitude: i32,
-    longitude: i32,
-    altitude: i32,
-    vel_e: i32,
-    vel_n: i32,
-    vel_u: i32,
-    baseline: u16,
-    nsv1: u8,
-    nsv2: u8,
-    status: Status,
+    pub gps_week: u16,  // 自 1980-1-6 至当前的星期数（格林尼治时间）
+    pub gps_time: u32,  // 自本周日 0:00:00 至当前的毫秒数（格林尼治时间）
+    pub heading: u32,   // 偏航角 [0   ,360) / (10^-3)°
+    pub pitch: i32,     // 俯仰角 [-90 ,90]  / (10^-3)°
+    pub roll: i32,      // 横滚角 [-180,180] / (10^-3)°
+    pub latitude: i32,  // 纬度 [-90 ,90]  / (10^-7)°
+    pub longitude: i32, // 经度 [-180,180] / (10^-7)°
+    pub altitude: i32,  // 海拔 / (10^-2)m
+    pub vel_e: i32,     // 东向速度 / mm/s
+    pub vel_n: i32,     // 北向速度 / mm/s
+    pub vel_u: i32,     // 天向速度 / mm/s
+    pub baseline: u16,  // 基线长度 / mm
+    pub nsv1: u8,       // 天线 1 星数
+    pub nsv2: u8,       // 天线 2 星数
+    pub status: Status, // 系统状态
 }
 
 #[derive(Debug, PartialEq)]

@@ -24,3 +24,19 @@ impl FromStr for Body {
         }
     }
 }
+
+impl ToString for Body {
+    fn to_string(&self) -> String {
+        match self {
+            Self::Get(body) => fmt_line("get", body),
+            Self::Set(body) => fmt_line("set", body),
+            Self::Through(body) => fmt_line("through", body),
+            Self::Unknown(head, body) => fmt_line(head, body),
+        }
+    }
+}
+
+#[inline]
+fn fmt_line(head: &str, body: &str) -> String {
+    format!("$cmd,{},{}*ff\r\n", head, body)
+}
