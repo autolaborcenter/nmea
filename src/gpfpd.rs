@@ -82,7 +82,7 @@ impl FromStr for Status {
         use SystemStatus::*;
         match s.as_bytes() {
             [a, b] => Ok(Self(
-                match a {
+                match b {
                     b'0' => 初始化,
                     b'1' => 粗对准,
                     b'2' => 精对准,
@@ -99,7 +99,7 @@ impl FromStr for Status {
                     b'F' => 动态出错,
                     _ => return Err(()),
                 },
-                match b {
+                match a {
                     b'0' => Gps1Bd,
                     b'2' => 双模,
                     b'4' => RTK固定解,
