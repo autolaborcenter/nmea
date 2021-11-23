@@ -21,9 +21,9 @@ pub struct Body {
 }
 
 #[derive(Debug, PartialEq)]
-pub struct Status(SystemStatus, RtkStatus);
+pub struct Status(pub SystemStatus, pub RtkStatus);
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, PartialOrd)]
 pub enum SystemStatus {
     初始化 = 0x0,
     粗对准 = 0x1,
