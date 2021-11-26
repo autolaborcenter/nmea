@@ -53,42 +53,23 @@ impl FromStr for Body {
     type Err = BodyParseError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        if s == ",,,,,0,,,,,,,," {
-            Ok(Self {
-                utc_time: 0,
-                latitude: (0, 0),
-                ns: NS::N,
-                longitude: (0, 0),
-                ew: EW::E,
-                status: Status::初始化,
-                nosv: 0,
-                hdop: (0, 0),
-                altitude: (0, 0),
-                alt_unit: LenUnit::M,
-                alt_ref: (0, 0),
-                alt_ref_unit: LenUnit::M,
-                diff_age: None,
-                diff_station: None,
-            })
-        } else {
-            let mut s = s.split(',');
-            Ok(Self {
-                utc_time: parse_field!(s => "GPGGA:UTCTime"; 2),
-                latitude: parse_field!(s => "GPGGA:Latitude"; ?),
-                ns: parse_field!(s => "GPGGA:N"),
-                longitude: parse_field!(s => "GPGGA:Longitude"; ?),
-                ew: parse_field!(s => "GPGGA:E"),
-                status: parse_field!(s => "GPGGA:FS"),
-                nosv: parse_field!(s => "GPGGA:NoSV"),
-                hdop: parse_field!(s => "GPGGA:HDOP"; ?),
-                altitude: parse_field!(s => "GPGGA:Altitude"; ?),
-                alt_unit: parse_field!(s => "GPGGA:AltUnit"),
-                alt_ref: parse_field!(s => "GPGGA:Altref"; ?),
-                alt_ref_unit: parse_field!(s => "GPGGA:AltrefUnit"),
-                diff_age: parse_field!(s =>? "GPGGA:DiffAge"),
-                diff_station: parse_field!(s =>? "GPGGA:DiffStation"),
-            })
-        }
+        let mut s = s.split(',');
+        Ok(Self {
+            utc_time: parse_field!(s => "GPGGA:UTCTime"; 2),
+            latitude: parse_field!(s => "GPGGA:Latitude"; ?),
+            ns: parse_field!(s => "GPGGA:N"),
+            longitude: parse_field!(s => "GPGGA:Longitude"; ?),
+            ew: parse_field!(s => "GPGGA:E"),
+            status: parse_field!(s => "GPGGA:FS"),
+            nosv: parse_field!(s => "GPGGA:NoSV"),
+            hdop: parse_field!(s => "GPGGA:HDOP"; ?),
+            altitude: parse_field!(s => "GPGGA:Altitude"; ?),
+            alt_unit: parse_field!(s => "GPGGA:AltUnit"),
+            alt_ref: parse_field!(s => "GPGGA:Altref"; ?),
+            alt_ref_unit: parse_field!(s => "GPGGA:AltrefUnit"),
+            diff_age: parse_field!(s =>? "GPGGA:DiffAge"),
+            diff_station: parse_field!(s =>? "GPGGA:DiffStation"),
+        })
     }
 }
 
