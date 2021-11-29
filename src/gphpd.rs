@@ -3,21 +3,21 @@ use std::str::FromStr;
 
 #[derive(Debug, PartialEq)]
 pub struct Body {
-    gps_week: u16,
-    gps_time: u32,
-    heading: u32,
-    pitch: i32,
-    track: i32,
-    latitude: i32,
-    longitude: i32,
-    altitude: i32,
-    vel_e: i32,
-    vel_n: i32,
-    vel_u: i32,
-    baseline: u16,
-    nsv1: u8,
-    nsv2: u8,
-    status: Status,
+    pub gps_week: u16,
+    pub gps_time: u32,
+    pub heading: u32,
+    pub pitch: i32,
+    pub track: i32,
+    pub latitude: i32,
+    pub longitude: i32,
+    pub altitude: i32,
+    pub vel_e: i32,
+    pub vel_n: i32,
+    pub vel_u: i32,
+    pub baseline: u16,
+    pub nsv1: u8,
+    pub nsv2: u8,
+    pub status: Status,
 }
 
 #[derive(Debug, PartialEq)]

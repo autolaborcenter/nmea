@@ -3,15 +3,15 @@ use std::str::FromStr;
 
 #[derive(Debug, PartialEq)]
 pub struct Body {
-    gps_week: u16,
-    gps_time: u32,
-    gyro_x: i32,
-    gyro_y: i32,
-    gyro_z: i32,
-    acc_x: i32,
-    acc_y: i32,
-    acc_z: i32,
-    tpr: i16,
+    pub gps_week: u16,
+    pub gps_time: u32,
+    pub gyro_x: i32,
+    pub gyro_y: i32,
+    pub gyro_z: i32,
+    pub acc_x: i32,
+    pub acc_y: i32,
+    pub acc_z: i32,
+    pub tpr: i16,
 }
 
 impl FromStr for Body {

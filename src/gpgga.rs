@@ -3,20 +3,20 @@ use std::str::FromStr;
 
 #[derive(PartialEq, Debug)]
 pub struct Body {
-    utc_time: u32,
-    latitude: (u64, u8),
-    ns: NS,
-    longitude: (u64, u8),
-    ew: EW,
-    status: Status,
-    nosv: u8,
-    hdop: (u16, u8),
-    altitude: (u32, u8),
-    alt_unit: LenUnit,
-    alt_ref: (i32, u8),
-    alt_ref_unit: LenUnit,
-    diff_age: Option<u8>,
-    diff_station: Option<u16>,
+    pub utc_time: u32,
+    pub latitude: (u64, u8),
+    pub ns: NS,
+    pub longitude: (u64, u8),
+    pub ew: EW,
+    pub status: Status,
+    pub nosv: u8,
+    pub hdop: (u16, u8),
+    pub altitude: (u32, u8),
+    pub alt_unit: LenUnit,
+    pub alt_ref: (i32, u8),
+    pub alt_ref_unit: LenUnit,
+    pub diff_age: Option<u8>,
+    pub diff_station: Option<u16>,
 }
 
 #[derive(PartialEq, Debug)]
