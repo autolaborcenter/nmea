@@ -31,7 +31,7 @@ pub enum EW {
     W,
 }
 
-#[derive(PartialEq, Debug)]
+#[derive(Clone, Copy, PartialEq, Debug)]
 pub enum Status {
     初始化 = 0x0,
     单点定位 = 0x1,
